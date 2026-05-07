@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wildlife Sightings — Log & Discover</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #1a2e1a;
+    --moss: #3d5c2e;
+    --fern: #5c7a3e;
+    --sage: #8aaa6a;
+    --mist: #c8d8b8;
+    --cream: #f5f0e8;
+    --bark: #6b4c2a;
+    --clay: #c47a3a;
+    --sky: #7aaabf;
+    --text: #1a2e1a;
+    --light-text: #5a6e4a;
+    --border: #c8d8b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--forest);
+    color: var(--cream);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  nav .brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  nav .brand span { font-size: 1.4rem; }
+  nav .nav-actions { display: flex; gap: 10px; align-items: center; }
+  .nav-btn {
+    background: transparent;
+    border: 1px solid rgba(200,216,184,0.4);
+    color: var(--mist);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { background: rgba(200,216,184,0.15); border-color: var(--mist); }
+  .nav-btn.primary {
+    background: var(--fern);
+    border-color: var(--fern);
+    color: white;
+  }
+  .nav-btn.primary:hover { background: var(--sage); border-color: var(--sage); }
+
+  /* ── SCREENS ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ══ SCREEN 1: MAP VIEW ══ */
+  #screen-map {
+    display: none;
+    flex-direction: column;
+  }
+  #screen-map.active { display: flex; }
+
+  .welcome-banner {
+    background: linear-gradient(135deg, var(--forest) 0%, var(--moss) 100%);
+    color: var(--cream);
+    padding: 20px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .welcome-banner h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .welcome-banner p {
+    font-size: 0.88rem;
+    color: var(--mist);
+    margin-top: 4px;
+    max-width: 480px;
+    line-height: 1.5;
+  }
+  .welcome-cta {
+    background: var(--clay);
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .welcome-cta:hover { background: #d88a4a; }
+
+  /* Filter bar */
+  .filter-bar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-bar span {
+    font-size: 0.8rem;
+    color: var(--light-text);
+    margin-right: 4px;
+    font-weight: 500;
+  }
+  .filter-btn {
+    padding: 5px 14px;
+    border-radius: 16px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    color: var(--text);
+  }
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--forest);
+    border-color: var(--forest);
+    color: white;
+  }
+
+  /* Map */
+  .map-area {
+    position: relative;
+    flex: 1;
+    min-height: 420px;
+    background: #d8e8c8;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  .map-bg {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(90,130,60,0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 75% 60%, rgba(90,130,60,0.2) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 80%, rgba(120,170,90,0.25) 0%, transparent 45%),
+      linear-gradient(160deg, #c8ddb8 0%, #d5e8c0 40%, #bdd4a8 100%);
+    position: absolute;
+    inset: 0;
+  }
+  /* Faux roads */
+  .map-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to right, transparent 30%, rgba(255,255,255,0.25) 30%, rgba(255,255,255,0.25) 31%, transparent 31%),
+      linear-gradient(to bottom, transparent 45%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.2) 46%, transparent 46%),
+      linear-gradient(130deg, transparent 55%, rgba(255,255,255,0.15) 55%, rgba(255,255,255,0.15) 56%, transparent 56%);
+  }
+  .map-tap-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26,46,26,0.8);
+    color: var(--mist);
+    font-size: 0.78rem;
+    padding: 6px 14px;
+    border-radius: 20px;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+  }
+
+  /* Pins */
+  .pin {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    cursor: pointer;
+    transition: transform 0.15s;
+    z-index: 10;
+  }
+  .pin:hover { transform: translate(-50%, -100%) scale(1.2); }
+  .pin-icon {
+    width: 32px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+    font-size: 14px;
+  }
+  .pin-icon span { transform: rotate(45deg); display: block; }
+  .pin.bird .pin-icon { background: var(--sky); }
+  .pin.mammal .pin-icon { background: var(--bark); }
+  .pin.reptile .pin-icon { background: var(--fern); }
+  .pin.private { opacity: 0.5; }
+
+  /* Pin tooltip */
+  .pin-label {
+    position: absolute;
+    bottom: 42px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--forest);
+    color: white;
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    display: none;
+    pointer-events: none;
+  }
+  .pin:hover .pin-label { display: block; }
+
+  /* FAB */
+  .fab {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    background: var(--clay);
+    color: white;
+    border: none;
+    padding: 14px 22px;
+    border-radius: 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    z-index: 20;
+  }
+  .fab:hover { background: #d88a4a; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+
+  /* ══ SCREEN 2: SUBMIT FORM ══ */
+  #screen-form { max-width: 560px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  .form-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .back-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .back-btn:hover { background: var(--mist); }
+  .form-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--forest);
+  }
+
+  /* Steps guide (IH#6) */
+  .steps-guide {
+    background: var(--forest);
+    color: var(--mist);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 0.83rem;
+    line-height: 1.7;
+  }
+  .steps-guide strong {
+    color: var(--sage);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(26,46,26,0.08);
+    border: 1px solid var(--border);
+  }
+
+  .field-group { margin-bottom: 20px; }
+  label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--light-text);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  label .req { color: var(--clay); }
+  input[type="text"], input[type="date"], select, textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    background: var(--cream);
+    color: var(--text);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--fern);
+    background: white;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .photo-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--cream);
+    position: relative;
+  }
+  .photo-upload-area:hover { border-color: var(--fern); background: #eef5e8; }
+  .photo-upload-area input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .photo-upload-area .upload-icon { font-size: 1.8rem; margin-bottom: 6px; }
+  .photo-upload-area p { font-size: 0.82rem; color: var(--light-text); }
+  #photo-preview { max-width: 100%; border-radius: 8px; margin-top: 10px; display: none; }
+
+  /* Toggle (IH#2 - public/private) */
+  .visibility-section {
+    background: #f8faf4;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .toggle-label { font-size: 0.92rem; font-weight: 500; }
+  .toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: #ccc;
+    border-radius: 13px;
+    cursor: pointer;
+    transition: background 0.25s;
+  }
+  .toggle-track::before {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.25s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle-switch input:checked + .toggle-track { background: var(--fern); }
+  .toggle-switch input:checked + .toggle-track::before { transform: translateX(22px); }
+  /* keyboard-accessible focus */
+  .toggle-switch input:focus-visible + .toggle-track { outline: 2px solid var(--clay); outline-offset: 2px; }
+
+  .privacy-note {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--bark);
+    background: #fff8f0;
+    border-left: 3px solid var(--clay);
+    padding: 6px 10px;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+  }
+
+  .form-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .btn-submit {
+    background: var(--forest);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    flex: 1;
+    transition: background 0.2s;
+  }
+  .btn-submit:hover { background: var(--moss); }
+  .btn-cancel {
+    background: white;
+    color: var(--text);
+    border: 1.5px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-cancel:hover { background: var(--mist); }
+
+  /* ══ SCREEN 3: SIGHTING DETAIL ══ */
+  #screen-detail { max-width: 560px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  .detail-photo {
+    width: 100%;
+    height: 220px;
+    background: linear-gradient(135deg, var(--moss), var(--fern));
+    border-radius: 14px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+  }
+  .detail-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+  .detail-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(26,46,26,0.08);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .detail-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    margin-bottom: 14px;
+    color: var(--forest);
+  }
+  .detail-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    align-items: flex-start;
+  }
+  .detail-row .detail-key {
+    color: var(--light-text);
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    min-width: 80px;
+    padding-top: 2px;
+  }
+  .detail-row .detail-val { color: var(--text); }
+  .type-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: white;
+  }
+  .type-badge.bird { background: var(--sky); }
+  .type-badge.mammal { background: var(--bark); }
+  .type-badge.reptile { background: var(--fern); }
+  .notes-box {
+    background: var(--cream);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: var(--light-text);
+    font-style: italic;
+    margin-top: 10px;
+  }
+
+  .detail-actions { display: flex; gap: 10px; }
+  .btn-delete {
+    background: #fee;
+    color: #c00;
+    border: 1.5px solid #fcc;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-delete:hover { background: #fcc; }
+  .btn-keep {
+    background: var(--forest);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    flex: 1;
+    transition: background 0.2s;
+  }
+  .btn-keep:hover { background: var(--moss); }
+
+  /* ══ SCREEN 4: CONFIRMATION ══ */
+  #screen-confirm { max-width: 480px; margin: 0 auto; padding: 48px 20px; text-align: center; }
+
+  .confirm-icon {
+    width: 80px; height: 80px;
+    background: var(--fern);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 2.2rem;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes popIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .confirm-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--forest);
+    margin-bottom: 8px;
+  }
+  .confirm-sub {
+    font-size: 0.9rem;
+    color: var(--light-text);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  .public-warning {
+    background: #fff8f0;
+    border: 1.5px solid #f0c080;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .public-warning h3 {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--bark);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .public-warning p {
+    font-size: 0.83rem;
+    color: #8a6030;
+    line-height: 1.5;
+  }
+  .private-notice {
+    background: #f0f4ff;
+    border: 1.5px solid #c0d0f0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 0.85rem;
+    color: #3050a0;
+    line-height: 1.5;
+  }
+
+  .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+  .btn-confirm-delete {
+    background: white;
+    color: #c00;
+    border: 1.5px solid #fcc;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+  }
+  .btn-confirm-delete:hover { background: #fee; }
+  .btn-to-map {
+    background: var(--forest);
+    color: white;
+    border: none;
+    padding: 11px 28px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-to-map:hover { background: var(--moss); }
+
+  /* ══ MODAL (Login/Register) ══ */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,46,26,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(3px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--forest);
+    margin-bottom: 20px;
+  }
+  .modal .field-group { margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-modal-submit {
+    background: var(--forest);
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    flex: 1;
+    transition: background 0.2s;
+  }
+  .btn-modal-submit:hover { background: var(--moss); }
+  .btn-modal-cancel {
+    background: white;
+    border: 1.5px solid var(--border);
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-modal-cancel:hover { background: var(--mist); }
+  .modal-toggle-row { display: flex; gap: 0; margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--border); }
+  .modal-tab {
+    flex: 1; padding: 8px; text-align: center;
+    background: white; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+    transition: background 0.2s;
+  }
+  .modal-tab.active { background: var(--forest); color: white; }
+
+  /* ══ DELETE CONFIRM MODAL ══ */
+  #delete-modal .modal { max-width: 340px; text-align: center; }
+  #delete-modal p { font-size: 0.9rem; color: var(--light-text); margin-bottom: 20px; line-height: 1.5; }
+  #delete-modal .modal-actions { justify-content: center; }
+
+  /* Accessibility: skip link */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--clay);
+    color: white;
+    padding: 6px 14px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    z-index: 999;
+    border-radius: 0 0 8px 0;
+    transition: top 0.2s;
+  }
+  .skip-link:focus { top: 0; }
+
+  /* Responsive */
+  @media (max-width: 500px) {
+    .welcome-banner { padding: 16px; }
+    .welcome-banner h1 { font-size: 1.3rem; }
+  }
+
+  /* Fade in animation */
+  .screen.active {
+    animation: fadeUp 0.3s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Accessibility skip link (IH#2 - accessibility cost info) -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ── NAV ── -->
+<nav role="navigation" aria-label="Main navigation">
+  <div class="brand"><span>🌿</span> Wildlife Sightings</div>
+  <div class="nav-actions">
+    <button class="nav-btn" onclick="showModal('login-modal')" aria-label="Log in to your account">Log In</button>
+    <button class="nav-btn primary" onclick="showModal('register-modal')" aria-label="Register a new account">Register</button>
+  </div>
+</nav>
+
+<main id="main-content">
+
+<!-- ══ SCREEN 1: MAP ══ -->
+<div id="screen-map" class="screen active" role="main">
+  <div class="welcome-banner" role="banner">
+    <div>
+      <h1>Welcome to Wildlife Sightings 🦅</h1>
+      <p>Discover, log, and share wildlife encounters in your area. Tap any pin to explore a sighting, or log your own to help the community track local wildlife. Your observations matter for conservation!</p>
+    </div>
+    <button class="welcome-cta" onclick="goToForm()" aria-label="Log a new wildlife sighting">+ Log a Sighting</button>
+  </div>
+
+  <div class="filter-bar" role="toolbar" aria-label="Filter sightings by animal type">
+    <span>Filter:</span>
+    <button class="filter-btn active" onclick="filterPins('all', this)" aria-pressed="true">All</button>
+    <button class="filter-btn" onclick="filterPins('bird', this)" aria-pressed="false">🐦 Birds</button>
+    <button class="filter-btn" onclick="filterPins('mammal', this)" aria-pressed="false">🦊 Mammals</button>
+    <button class="filter-btn" onclick="filterPins('reptile', this)" aria-pressed="false">🦎 Reptiles</button>
+  </div>
+
+  <div class="map-area" id="map" role="application" aria-label="Interactive map showing wildlife sightings. Click anywhere to log a sighting at that location." tabindex="0" onclick="handleMapClick(event)" onkeydown="handleMapKey(event)">
+    <div class="map-bg"></div>
+
+    <!-- Sample pins -->
+    <div class="pin bird" style="left:28%;top:35%" onclick="viewSighting(event,0)" aria-label="View Red-tailed Hawk sighting" role="button" tabindex="0" onkeydown="if(event.key==='Enter')viewSighting(event,0)">
+      <div class="pin-icon"><span>🐦</span></div>
+      <div class="pin-label">Red-tailed Hawk</div>
+    </div>
+    <div class="pin mammal" style="left:55%;top:52%" onclick="viewSighting(event,1)" aria-label="View Deer sighting" role="button" tabindex="0" onkeydown="if(event.key==='Enter')viewSighting(event,1)">
+      <div class="pin-icon"><span>🦌</span></div>
+      <div class="pin-label">Black-tailed Deer</div>
+    </div>
+    <div class="pin reptile" style="left:72%;top:28%" onclick="viewSighting(event,2)" aria-label="View Western Skink sighting" role="button" tabindex="0" onkeydown="if(event.key==='Enter')viewSighting(event,2)">
+      <div class="pin-icon"><span>🦎</span></div>
+      <div class="pin-label">Western Skink</div>
+    </div>
+    <div class="pin bird" style="left:42%;top:68%" onclick="viewSighting(event,3)" aria-label="View Great Blue Heron sighting" role="button" tabindex="0" onkeydown="if(event.key==='Enter')viewSighting(event,3)">
+      <div class="pin-icon"><span>🦢</span></div>
+      <div class="pin-label">Great Blue Heron</div>
+    </div>
+    <div class="pin mammal" style="left:18%;top:62%" onclick="viewSighting(event,4)" aria-label="View River Otter sighting" role="button" tabindex="0" onkeydown="if(event.key==='Enter')viewSighting(event,4)">
+      <div class="pin-icon"><span>🦦</span></div>
+      <div class="pin-label">River Otter</div>
+    </div>
+
+    <div class="map-tap-hint">Click anywhere on the map to log a sighting at that location — or use the button below</div>
+
+    <button class="fab" onclick="goToForm()" aria-label="Log a new sighting">
+      <span>+</span> Log a Sighting
+    </button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2: SUBMIT FORM ══ -->
+<div id="screen-form" class="screen" role="main">
+  <div style="max-width:560px;margin:0 auto;padding:28px 20px 60px">
+    <div class="form-header">
+      <button class="back-btn" onclick="showScreen('map')" aria-label="Back to map">← Back</button>
+      <h2>Log a Sighting</h2>
+    </div>
+
+    <!-- IH#6: Explicit path -->
+    <div class="steps-guide" role="note" aria-label="How to log a sighting">
+      <strong>How to log a sighting:</strong>
+      1. Enter animal name &amp; type &nbsp;·&nbsp;
+      2. Add date and notes &nbsp;·&nbsp;
+      3. Choose public or private &nbsp;·&nbsp;
+      4. Press Submit
+    </div>
+
+    <div class="form-card">
+      <div class="field-group">
+        <label for="animal-name">Animal Name <span class="req">*</span></label>
+        <input type="text" id="animal-name" placeholder="e.g. Red-tailed Hawk" required aria-required="true">
+      </div>
+
+      <div class="field-group">
+        <label for="animal-type">Animal Type <span class="req">*</span></label>
+        <select id="animal-type" required aria-required="true">
+          <option value="">— Select type —</option>
+          <option value="bird">Bird</option>
+          <option value="mammal">Mammal</option>
+          <option value="reptile">Reptile</option>
+          <option value="amphibian">Amphibian</option>
+          <option value="insect">Insect</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="sighting-date">Date Spotted <span class="req">*</span></label>
+        <input type="date" id="sighting-date" required aria-required="true">
+      </div>
+
+      <div class="field-group">
+        <label for="sighting-notes">Notes <span style="color:var(--light-text);font-weight:300">(optional)</span></label>
+        <textarea id="sighting-notes" placeholder="Describe what you observed — behavior, habitat, time of day..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label>Photo <span style="color:var(--light-text);font-weight:300">(optional)</span></label>
+        <div class="photo-upload-area" role="button" aria-label="Upload a photo of your sighting">
+          <input type="file" id="photo-input" accept="image/*" onchange="previewPhoto(this)" aria-label="Choose photo file">
+          <div class="upload-icon">📷</div>
+          <p>Click to upload a photo</p>
+          <img id="photo-preview" alt="Photo preview">
+        </div>
+      </div>
+
+      <!-- IH#2: Explain cost - privacy warning -->
+      <div class="visibility-section">
+        <div class="toggle-row">
+          <span class="toggle-label">Make this sighting public</span>
+          <label class="toggle-switch" aria-label="Toggle public visibility">
+            <input type="checkbox" id="visibility-toggle" checked onchange="updatePrivacyNote()">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="privacy-note" id="privacy-note" role="alert">
+          ⚠️ <strong>Public sightings are visible to all visitors.</strong> Your username and location will be shown on the map. You can delete this sighting at any time from your profile.
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <!-- IH#7: Two ways - submit button + could also press Enter (IH#5: cancel = backtrack) -->
+        <button class="btn-submit" onclick="submitSighting()" aria-label="Submit your sighting">Submit Sighting</button>
+        <button class="btn-cancel" onclick="confirmCancel()" aria-label="Cancel and go back">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 3: SIGHTING DETAIL ══ -->
+<div id="screen-detail" class="screen" role="main">
+  <div style="max-width:560px;margin:0 auto;padding:28px 20px 60px">
+    <div class="form-header">
+      <!-- IH#4: Familiar back arrow -->
+      <button class="back-btn" onclick="showScreen('map')" aria-label="Back to map">← Back to Map</button>
+      <h2>Sighting Detail</h2>
+    </div>
+
+    <div id="detail-photo-area" class="detail-photo" role="img" aria-label="Animal photo or placeholder"></div>
+
+    <div class="detail-card">
+      <h2 id="detail-name">Animal Name</h2>
+      <div class="detail-row">
+        <span class="detail-key">Type</span>
+        <span class="detail-val"><span id="detail-type-badge" class="type-badge"></span></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Date</span>
+        <span class="detail-val" id="detail-date"></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Location</span>
+        <span class="detail-val" id="detail-location"></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Logged by</span>
+        <span class="detail-val" id="detail-user"></span>
+      </div>
+      <div id="detail-notes-box" class="notes-box" style="display:none"></div>
+    </div>
+
+    <!-- IH#5 + IH#8: Delete option after viewing -->
+    <div class="detail-actions">
+      <button class="btn-delete" onclick="showModal('delete-modal')" aria-label="Delete this sighting">🗑 Delete Sighting</button>
+      <button class="btn-keep" onclick="showScreen('map')" aria-label="Keep sighting and return to map">Keep &amp; Return to Map</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4: CONFIRMATION ══ -->
+<div id="screen-confirm" class="screen" role="main">
+  <div class="confirm-icon" role="img" aria-label="Success checkmark">✓</div>
+  <h2 class="confirm-title">Sighting Saved!</h2>
+  <p class="confirm-sub">Your sighting has been logged on the map.<br>Thank you for contributing to local wildlife data!</p>
+
+  <!-- IH#8: Tinkerers warned about public consequence -->
+  <div id="confirm-public-warning" class="public-warning" role="alert">
+    <h3>📢 Posted Publicly?</h3>
+    <p>This sighting is visible to all visitors. You can edit or delete it from your profile at any time.</p>
+  </div>
+  <div id="confirm-private-notice" class="private-notice" style="display:none" role="status">
+    🔒 This sighting is private — only you can see it when logged in.
+  </div>
+
+  <div class="confirm-actions">
+    <button class="btn-confirm-delete" onclick="showModal('delete-modal')" aria-label="Delete this sighting">Delete It</button>
+    <button class="btn-to-map" onclick="showScreen('map')" aria-label="Return to map">Back to Map</button>
+  </div>
+</div>
+
+</main>
+
+<!-- ══ LOGIN MODAL ══ -->
+<div id="login-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="login-title">
+  <div class="modal">
+    <h2 id="login-title">Log In</h2>
+    <div class="field-group">
+      <label for="login-email">Email</label>
+      <input type="text" id="login-email" placeholder="your@email.com">
+    </div>
+    <div class="field-group">
+      <label for="login-password">Password</label>
+      <input type="text" id="login-password" placeholder="••••••••">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-submit" onclick="closeModal('login-modal')">Log In</button>
+      <button class="btn-modal-cancel" onclick="closeModal('login-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REGISTER MODAL ══ -->
+<div id="register-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="register-title">
+  <div class="modal">
+    <h2 id="register-title">Create Account</h2>
+    <div class="field-group">
+      <label for="reg-name">Display Name</label>
+      <input type="text" id="reg-name" placeholder="Nature Explorer">
+    </div>
+    <div class="field-group">
+      <label for="reg-email">Email</label>
+      <input type="text" id="reg-email" placeholder="your@email.com">
+    </div>
+    <div class="field-group">
+      <label for="reg-password">Password</label>
+      <input type="text" id="reg-password" placeholder="••••••••">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-submit" onclick="closeModal('register-modal')">Create Account</button>
+      <button class="btn-modal-cancel" onclick="closeModal('register-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DELETE CONFIRM MODAL ══ -->
+<!-- IH#8: Confirm before destructive action -->
+<div id="delete-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+  <div class="modal">
+    <h2 id="delete-title">🗑 Delete Sighting?</h2>
+    <p>Are you sure? This sighting will be permanently removed from the map. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-modal-submit" style="background:#c00" onclick="deleteSighting()">Yes, Delete It</button>
+      <button class="btn-modal-cancel" onclick="closeModal('delete-modal')">No, Keep It</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const SAMPLE_SIGHTINGS = [
+  { name: "Red-tailed Hawk", type: "bird", emoji: "🐦", date: "April 18, 2026", location: "Forest Park, Portland", user: "Addison H.", notes: "Spotted soaring above the treetops near the Wildwood Trail. Distinctive rusty-red tail visible in flight.", public: true },
+  { name: "Black-tailed Deer", type: "mammal", emoji: "🦌", date: "April 22, 2026", location: "Powell Butte, Portland", user: "NatureWatcher22", notes: "Doe with two fawns grazing at dusk.", public: true },
+  { name: "Western Skink", type: "reptile", emoji: "🦎", date: "April 20, 2026", location: "Columbia River Gorge", user: "HikingNerd", notes: null, public: true },
+  { name: "Great Blue Heron", type: "bird", emoji: "🦢", date: "April 25, 2026", location: "Sauvie Island, OR", user: "BirdWatch503", notes: "Standing motionless in shallow water. Caught a fish within 5 minutes.", public: true },
+  { name: "River Otter", type: "mammal", emoji: "🦦", date: "April 21, 2026", location: "Tualatin River, OR", user: "WildlifeFan", notes: "Family of 3 playing near the bank.", public: true },
+];
+
+let userSightings = [];
+let currentSightingIdx = null;
+let pendingSighting = null;
+
+// ── SCREEN MANAGEMENT ──
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + name);
+  el.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goToForm() {
+  // Set today's date as default
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('sighting-date').value = today;
+  showScreen('form');
+}
+
+// ── FILTER PINS (IH#3) ──
+function filterPins(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-pressed', 'false');
+  });
+  btn.classList.add('active');
+  btn.setAttribute('aria-pressed', 'true');
+
+  document.querySelectorAll('.pin').forEach(pin => {
+    if (type === 'all' || pin.classList.contains(type)) {
+      pin.style.display = '';
+    } else {
+      pin.style.display = 'none';
+    }
+  });
+}
+
+// ── MAP CLICK → FORM ──
+function handleMapClick(e) {
+  if (e.target.closest('.pin') || e.target.closest('.fab')) return;
+  goToForm();
+}
+function handleMapKey(e) {
+  if (e.key === 'Enter' || e.key === ' ') goToForm();
+}
+
+// ── VIEW SIGHTING (IH#3 - click pin for details) ──
+function viewSighting(e, idx) {
+  e.stopPropagation();
+  const s = idx < SAMPLE_SIGHTINGS.length ? SAMPLE_SIGHTINGS[idx] : userSightings[idx - SAMPLE_SIGHTINGS.length];
+  currentSightingIdx = idx;
+
+  document.getElementById('detail-name').textContent = s.name;
+  const badge = document.getElementById('detail-type-badge');
+  badge.textContent = s.type.charAt(0).toUpperCase() + s.type.slice(1);
+  badge.className = 'type-badge ' + s.type;
+  document.getElementById('detail-date').textContent = s.date;
+  document.getElementById('detail-location').textContent = s.location;
+  document.getElementById('detail-user').textContent = s.user;
+
+  const notesBox = document.getElementById('detail-notes-box');
+  if (s.notes) { notesBox.textContent = '"' + s.notes + '"'; notesBox.style.display = 'block'; }
+  else { notesBox.style.display = 'none'; }
+
+  const photoArea = document.getElementById('detail-photo-area');
+  photoArea.innerHTML = s.emoji || '🌿';
+  photoArea.setAttribute('aria-label', s.name + ' photo placeholder');
+
+  showScreen('detail');
+}
+
+// ── PRIVACY NOTE UPDATE (IH#2) ──
+function updatePrivacyNote() {
+  const isPublic = document.getElementById('visibility-toggle').checked;
+  const note = document.getElementById('privacy-note');
+  if (isPublic) {
+    note.innerHTML = '⚠️ <strong>Public sightings are visible to all visitors.</strong> Your username and location will be shown on the map. You can delete this sighting at any time.';
+  } else {
+    note.innerHTML = '🔒 <strong>Private sightings are only visible to you</strong> when logged in. They will not appear on the public map.';
+  }
+}
+
+// ── PHOTO PREVIEW ──
+function previewPhoto(input) {
+  const preview = document.getElementById('photo-preview');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// ── SUBMIT (IH#5: cancel button; IH#8: public warning on confirm) ──
+function submitSighting() {
+  const name = document.getElementById('animal-name').value.trim();
+  const type = document.getElementById('animal-type').value;
+  const date = document.getElementById('sighting-date').value;
+
+  if (!name) { alert('Please enter an animal name.'); document.getElementById('animal-name').focus(); return; }
+  if (!type) { alert('Please select an animal type.'); document.getElementById('animal-type').focus(); return; }
+  if (!date) { alert('Please enter the date spotted.'); document.getElementById('sighting-date').focus(); return; }
+
+  const isPublic = document.getElementById('visibility-toggle').checked;
+  const notes = document.getElementById('sighting-notes').value.trim();
+  const typeEmojis = { bird:'🐦', mammal:'🦊', reptile:'🦎', amphibian:'🐸', insect:'🦋', other:'🐾' };
+
+  pendingSighting = {
+    name, type, date: new Date(date).toLocaleDateString('en-US', {month:'long',day:'numeric',year:'numeric'}),
+    location: 'Portland, OR', user: 'You', notes: notes || null,
+    public: isPublic, emoji: typeEmojis[type] || '🐾'
+  };
+
+  // Add a new pin
+  addUserPin(pendingSighting);
+
+  // Show confirmation
+  document.getElementById('confirm-public-warning').style.display = isPublic ? 'block' : 'none';
+  document.getElementById('confirm-private-notice').style.display = isPublic ? 'none' : 'block';
+  showScreen('confirm');
+
+  // Reset form
+  document.getElementById('animal-name').value = '';
+  document.getElementById('animal-type').value = '';
+  document.getElementById('sighting-notes').value = '';
+  document.getElementById('photo-preview').style.display = 'none';
+  document.getElementById('visibility-toggle').checked = true;
+  updatePrivacyNote();
+}
+
+function addUserPin(s) {
+  const map = document.getElementById('map');
+  const pin = document.createElement('div');
+  const left = 20 + Math.random() * 60;
+  const top = 20 + Math.random() * 60;
+  pin.className = 'pin ' + s.type;
+  pin.style.left = left + '%';
+  pin.style.top = top + '%';
+  pin.setAttribute('role', 'button');
+  pin.setAttribute('tabindex', '0');
+  pin.setAttribute('aria-label', 'View ' + s.name + ' sighting');
+
+  const idx = SAMPLE_SIGHTINGS.length + userSightings.length;
+  userSightings.push(s);
+
+  pin.innerHTML = `<div class="pin-icon"><span>${s.emoji}</span></div><div class="pin-label">${s.name}</div>`;
+  pin.onclick = (e) => viewSighting(e, idx);
+  pin.onkeydown = (e) => { if(e.key==='Enter') viewSighting(e, idx); };
+  map.appendChild(pin);
+}
+
+// ── IH#5: Cancel = backtrack ──
+function confirmCancel() {
+  const name = document.getElementById('animal-name').value.trim();
+  if (name) {
+    // IH#8: warn before losing work
+    if (!confirm('Are you sure you want to cancel? Your unsaved sighting will be lost.')) return;
+  }
+  showScreen('map');
+}
+
+// ── DELETE (IH#5 + IH#8) ──
+function deleteSighting() {
+  closeModal('delete-modal');
+  pendingSighting = null;
+  // Remove last user pin from map if applicable
+  const userPins = document.querySelectorAll('.pin:not([style*="28%"]):not([style*="55%"]):not([style*="72%"]):not([style*="42%"]):not([style*="18%"])');
+  if (userSightings.length > 0) userSightings.pop();
+  showScreen('map');
+}
+
+// ── MODAL MANAGEMENT ──
+function showModal(id) {
+  document.getElementById(id).classList.add('open');
+  // Focus first input for accessibility
+  const firstInput = document.querySelector('#' + id + ' input');
+  if (firstInput) setTimeout(() => firstInput.focus(), 50);
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+// Escape key closes modals
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+</script>
+</body>
+</html>
